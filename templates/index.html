@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asesor Contable IA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Asesor Contable IA 📊</h1>
+        </header>
+
+        <main>
+            <div class="disclaimer">
+                <strong>⚠️ Aviso Importante:</strong> Este es un servicio educativo automatizado. La información proporcionada es para fines orientativos y de enseñanza. <strong>NO reemplaza la asesoría de un contador público certificado.</strong>
+            </div>
+
+            <div id="chatbox">
+                </div>
+
+            <div class="message assistant-message typing-indicator" id="typing-indicator">
+                <div class="avatar">IA</div>
+                <div class="message-content">
+                    <div class="typing-indicator">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <form id="accounting-form">
+                <div class="full-width">
+                    <label for="pregunta">Escribe tu duda contable:</label>
+                    <textarea id="pregunta" name="pregunta" rows="4" required placeholder="Ej: ¿Cómo presento mi declaración anual si soy RESICO?"></textarea>
+                </div>
+                
+                <button type="submit" id="submit-button">Consultar</button>
+            </form>
+        </main>
+    </div>
+
+    <script>
+        const form = document.getElementById('accounting-form');
+        const submitButton = document.getElementById('submit-button');
+        const chatbox = document.getElementById('chatbox');
+        const typingIndicator = document.getElementById('typing-indicator');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const pregunta = document.getElementById('pregunta').value;
+            if (!pregunta.trim()) return;
+
+            addMessage(pregunta, 'user');
+            form.reset();
+
+            submitButton.disabled = true;
+            submitButton.textContent = 'Procesando...';
+            typingIndicator.style.display = 'flex';
+            chatbox.scrollTop = chatbox.scrollHeight;
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pregunta: pregunta })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Error en la respuesta del servidor.');
+                }
+
+                const result = await response.json();
+                addMessage(result.respuesta, 'assistant');
+
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage(`Lo siento, ocurrió un error: ${error.message}`, 'assistant');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Consultar';
+                typingIndicator.style.display = 'none';
+            }
+        });
+
+        function addMessage(text, sender) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = `message ${sender}-message`;
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.textContent = (sender === 'user') ? 'TÚ' : 'IA';
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = text;
+            messageWrapper.appendChild(avatar);
+            messageWrapper.appendChild(messageContent);
+            chatbox.appendChild(messageWrapper);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        window.onload = () => {
+             addMessage('Hola, soy tu asistente contable. Puedo ayudarte a entender temas como declaraciones, facturas y regímenes fiscales. ¿Cuál es tu duda?', 'assistant');
+        };
+    </script>
+
+</body>
+</html>
